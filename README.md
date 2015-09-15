@@ -100,3 +100,16 @@ Simple py script to check the change of apk size
         ============compare result==============
     
     ```
+-----
+## Fixme
+Since using dict to compare, result will be not specific enough when **file with the same name in different floders**.
+for example
+    
+    ```
+    
+        ./lalalal.jar
+        ./assets/lalalal.jar
+    
+    ```
+    
+will only show one compare result
