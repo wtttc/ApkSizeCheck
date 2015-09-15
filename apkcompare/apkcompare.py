@@ -6,8 +6,10 @@ import os
 import sys
 import zipfile
 import shutil
+import getopt
 
 __author__ = 'tiantong'
+
 
 # 打开文件
 def open_read_file():
@@ -111,59 +113,104 @@ def surely_rmdir(dir):
         shutil.rmtree(dir)
 
 
-try:
-    apk_old = sys.argv[1]
-    apk_new = sys.argv[2]
-except:
-    print("error input")
-    sys.exit()
+def compare_apk(apk_old, apk_new):
+    # 获取没有拓展名的文件名
+    old_apk_dir = os.path.split(apk_old)[-1].split(".")[0]
+    new_apk_dir = os.path.split(apk_new)[-1].split(".")[0]
 
-# 获取没有拓展名的文件名
-old_apk_dir = os.path.split(apk_old)[-1].split(".")[0]
-new_apk_dir = os.path.split(apk_new)[-1].split(".")[0]
+    old_size = get_path_size(apk_old)
+    new_size = get_path_size(apk_new)
+    print("apk_old:" + apk_old + " size:" + get_size_in_nice_string(old_size))
+    print("apk_new:" + apk_new + " size:" + get_size_in_nice_string(new_size))
 
-old_size = get_path_size(apk_old)
-new_size = get_path_size(apk_new)
-print("apk_old:" + apk_old + " size:" + get_size_in_nice_string(old_size))
-print("apk_new:" + apk_new + " size:" + get_size_in_nice_string(new_size))
+    # 解压文件夹以便分析
+    surely_rmdir(old_apk_dir)
+    surely_rmdir(new_apk_dir)
+    unzip_dir(apk_old, old_apk_dir)
+    unzip_dir(apk_new, new_apk_dir)
+    json_object = get_json_from_file("apk_tree");
+    data_string = json.dumps(json_object)
+    jdict = json.loads(data_string)
 
-# 解压文件夹以便分析
-surely_rmdir(old_apk_dir)
-surely_rmdir(new_apk_dir)
-unzip_dir(apk_old, old_apk_dir)
-unzip_dir(apk_new, new_apk_dir)
-json_object = get_json_from_file("apk_tree");
-data_string = json.dumps(json_object)
-jdict = json.loads(data_string)
+    # 键值对保存要查文件的大小，用于后面对比
+    old_apk_obj = dict();
+    new_apk_obj = dict();
 
-# 键值对保存要查文件的大小，用于后面对比
-old_apk_obj = dict();
-new_apk_obj = dict();
+    print("")
+    print("")
+    # 输出其中指定文件的大小
+    print("============%s==============" % old_apk_dir)
+    walk_dict(old_apk_dir, jdict, old_apk_obj)
+    print("============%s==============" % old_apk_dir)
+    print("")
+    print("")
+    print("============%s==============" % new_apk_dir)
+    walk_dict(new_apk_dir, jdict, new_apk_obj)
+    print("============%s==============" % new_apk_dir)
+    print("")
+    print("")
 
-# 输出其中指定文件的大小
-print("============%s==============" % old_apk_dir)
-walk_dict(old_apk_dir, jdict, old_apk_obj)
-print("============%s==============" % old_apk_dir)
-print("")
-print("")
-print("============%s==============" % new_apk_dir)
-walk_dict(new_apk_dir, jdict, new_apk_obj)
-print("============%s==============" % new_apk_dir)
+    print("============compare result==============")
+    # compare
+    for (k, v) in new_apk_obj.items():
+        # print("k:%s  v:%s" % (k, str(v)))
+        if old_apk_obj.has_key(k):
+            changed = v - old_apk_obj[k]
+            deltaString = ""
+            if changed < 0:
+                changed = -changed
+                deltaString = "-" + get_size_in_nice_string(changed)
+            else:
+                deltaString = get_size_in_nice_string(changed)
 
-# compare
-for (k, v) in new_apk_obj.items():
-    # print("k:%s  v:%s" % (k, str(v)))
-    if old_apk_obj.has_key(k):
-        changed = v - old_apk_obj[k]
-        deltaString = ""
-        if changed < 0:
-            changed = -changed
-            deltaString = "-" + get_size_in_nice_string(changed)
-        else:
-            deltaString = get_size_in_nice_string(changed)
+            print("file:%s has changed %s" % (k, deltaString))
+    print("============compare result==============")
+    print("")
+    print("")
 
-        print("file:%s has changed %s" % (k, deltaString))
+    # 清除临时解压的apk文件夹
+    surely_rmdir(old_apk_dir)
+    surely_rmdir(new_apk_dir)
 
-# 清除临时解压的apk文件夹
-surely_rmdir(old_apk_dir)
-surely_rmdir(new_apk_dir)
+
+def usage():
+    print '------------PyTest.py usage:------------'
+    print '-h, --help: print help message.'
+    print '-o, --old : input old apk file path'
+    print '-n, --new : input new apk file path'
+    print '----------------------------------------'
+
+
+if "__main__" == __name__:
+    apk_old = None;
+    apk_new = None;
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "ho:n:", ["help", "output="])
+
+        # print("============ opts ==================");
+        # print(opts);
+        #
+        # print("============ args ==================");
+        # print(args);
+
+        # check all param
+        for opt, arg in opts:
+            if opt in ("-h", "--help"):
+                usage();
+                sys.exit(1);
+            if opt in ("-o", "--old"):
+                apk_old = arg
+            if opt in ("-n", "--new"):
+                apk_new = arg
+
+    except getopt.GetoptError:
+        print("getopt error!");
+        usage();
+        sys.exit(1);
+
+    if apk_new is None or apk_old is None:
+        print("invalid input! Able to check if valid args with -o and -n");
+        usage();
+        sys.exit(1);
+
+    compare_apk(apk_old, apk_new)
