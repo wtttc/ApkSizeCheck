@@ -163,7 +163,7 @@ def compare_apk(apk_old, apk_new):
             else:
                 deltaString = get_size_in_nice_string(changed)
 
-            print("file:%s | old: %s | new: %s | changed: %s" % (
+            print("file:%-20s | old: %-15s | new: %-15s | changed: %-15s" % (
             k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
     print("============compare result==============")
     print("")
