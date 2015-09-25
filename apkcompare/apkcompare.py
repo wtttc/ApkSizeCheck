@@ -3,10 +3,12 @@
 import json
 import functools
 import os
+import subprocess
 import sys
 import zipfile
 import shutil
 import getopt
+import struct
 
 __author__ = 'tiantong'
 
@@ -95,15 +97,85 @@ def unzip_dir(zipfilename, unzipdirname):
     print "Unzip file succeed!"
 
 
-def walk_dict(parent, jdict, obj=None):
+def unzip_with_command(jar_path, out_path):
+    command = 'unzip ' + jar_path + ' -d ' + out_path
+    result = os.popen(command).read()
+
+
+def get_method_counts_in_file(filepath):
+    if not os.path.isfile(filepath):
+        return None
+    if ".jar" in filepath:
+        abspath = os.path.abspath(filepath)
+        # print("abspath:" + abspath)
+        filename = os.path.basename(filepath).split(".")[0]
+        # print("filename:" + filename)
+        floderpath = os.path.split(abspath)[0]
+        # print("floderpath:" + floderpath)
+        unzippath = os.path.join(floderpath, filename)
+        # print("unzippath:" + unzippath)
+        unzip_with_command(abspath, unzippath)
+        dexpath = os.path.join(unzippath, "classes.dex")
+        # return get_method_counts_in_dex(dexpath)
+        return get_method_count(dexpath)
+    elif ".dex" in filepath:
+        abspath = os.path.abspath(filepath)
+        # return get_method_counts_in_dex(abspath)
+        return get_method_count(abspath)
+    return None
+
+
+# http://mp.weixin.qq.com/s?__biz=MzAwNDY1ODY2OQ==&amp;mid=208008519&amp;idx=1&amp;sn=278b7793699a654b51588319b15b3013&amp;scene=1&amp;srcid=0924KyxvtDNaHGrK2iL76iiH#rd
+def get_method_counts_in_dex(dexpath):
+    if not os.path.isfile(dexpath):
+        return None
+    # print("dexpath:" + dexpath)
+    # command = "cat " + dexpath + " | head -c 92 | tail -c 4 | hexdump -e \'1/4 \"%d\n\"'"
+    # result = os.popen(command, stdout=subprocess.PIPE, shell=True)
+
+    # 该方法在mac上总是报错
+    try:
+        # p1 = subprocess.Popen('cat ' + dexpath, stdout=subprocess.PIPE, shell=True)
+        # p2 = subprocess.Popen('head -c 92', stdin=p1.stdout, stdout=subprocess.PIPE, shell=True)
+        # p1.stdout.close()
+        # p3 = subprocess.Popen('tail -c 4', stdin=p2.stdout, stdout=subprocess.PIPE, shell=True)
+        # p2.stdout.close()
+        # handle = subprocess.Popen("hexdump -e \'1/4 \"%d\n\"\'", stdin=p3.stdout, stdout=subprocess.PIPE, shell=True)
+        # p3.stdout.close()
+        # # print handle.stdout.read()
+        # return str(handle.communicate()[0])
+        output = subprocess.check_output("cat " + dexpath + " | head -c 92 | tail -c 4 | hexdump -e \'1/4 \"%d\n\"\'",
+                                         shell=True)
+        return output
+    except Exception, e:
+        print("catch exception:", e)
+    return None
+
+
+# from https://gist.github.com/jensck/4532039
+def get_method_count(dex_path):
+    with open(dex_path, 'rb') as dex:
+        # read 88 bytes in, plus the 4 bytes for the actual integer data we want
+        dex.seek(88)
+        method_count_bytes = dex.read(4)
+    return struct.unpack('<I', method_count_bytes)[0]
+
+
+def walk_dict(parent, jdict, size_dict=None, method_dict=None):
     for (d, x) in jdict.items():
         path = os.path.join(parent, d)
         size = get_path_size(path)
-        if obj is not None and isinstance(obj, dict):
-            obj[d] = size
+        if size_dict is not None and isinstance(size_dict, dict):
+            size_dict[d] = size
+
+        if method_dict is not None:
+            count = get_method_counts_in_file(path)
+            if count is not None:
+                # print("d:" + d + " count:" + count)
+                method_dict[d] = count
         print "path:" + path + "    size:" + get_size_in_nice_string(size)
         if isinstance(x, dict):
-            walk_dict(path, x, obj)
+            walk_dict(path, x, size_dict, method_dict)
         else:
             pass
 
@@ -135,17 +207,18 @@ def compare_apk(apk_old, apk_new):
     # 键值对保存要查文件的大小，用于后面对比
     old_apk_obj = dict();
     new_apk_obj = dict();
+    new_method_dict = dict();
 
     print("")
     print("")
     # 输出其中指定文件的大小
     print("============%s==============" % old_apk_dir)
-    walk_dict(old_apk_dir, jdict, old_apk_obj)
+    walk_dict(old_apk_dir, jdict, old_apk_obj, None)
     print("============%s==============" % old_apk_dir)
     print("")
     print("")
     print("============%s==============" % new_apk_dir)
-    walk_dict(new_apk_dir, jdict, new_apk_obj)
+    walk_dict(new_apk_dir, jdict, new_apk_obj, new_method_dict)
     print("============%s==============" % new_apk_dir)
     print("")
     print("")
@@ -163,8 +236,13 @@ def compare_apk(apk_old, apk_new):
             else:
                 deltaString = get_size_in_nice_string(changed)
 
-            print("file:%-20s | old: %-15s | new: %-15s | changed: %-15s" % (
-            k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
+            if new_method_dict.has_key(k):
+                method_count = new_method_dict[k]
+                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s | methods:  %-12s" % (
+                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString, method_count))
+            else:
+                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s" % (
+                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
     print("============compare result==============")
     print("")
     print("")
