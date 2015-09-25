@@ -168,12 +168,18 @@ def walk_dict(parent, jdict, size_dict=None, method_dict=None):
         if size_dict is not None and isinstance(size_dict, dict):
             size_dict[d] = size
 
+        count = None
         if method_dict is not None:
             count = get_method_counts_in_file(path)
             if count is not None:
                 # print("d:" + d + " count:" + count)
                 method_dict[d] = count
-        print "path:" + path + "    size:" + get_size_in_nice_string(size)
+        method_count = "method:"
+        if count is None:
+            method_count = ""
+        else:
+            method_count += str(count)
+        print "path:" + path + "    size:" + get_size_in_nice_string(size) + method_count
         if isinstance(x, dict):
             walk_dict(path, x, size_dict, method_dict)
         else:
@@ -252,17 +258,48 @@ def compare_apk(apk_old, apk_new):
     surely_rmdir(new_apk_dir)
 
 
+def get_apk_data(apk_single):
+    # 获取没有拓展名的文件名
+    apk_dir = os.path.split(apk_single)[-1].split(".")[0]
+
+    apk_size = get_path_size(apk_dir)
+    print("apk_single:" + apk_dir + " size:" + get_size_in_nice_string(apk_size))
+
+    # 解压文件夹以便分析
+    surely_rmdir(apk_dir)
+    unzip_dir(apk_old, apk_dir)
+    json_object = get_json_from_file("apk_tree");
+    data_string = json.dumps(json_object)
+    jdict = json.loads(data_string)
+
+    # 键值对保存要查文件的大小，用于后面对比
+    apk_obj = dict();
+    method_dict = dict();
+
+    print("")
+    print("")
+    # 输出其中指定文件的大小
+    print("============%s==============" % apk_dir)
+    walk_dict(apk_dir, jdict, apk_obj, method_dict)
+    print("============%s==============" % apk_dir)
+
+    # 清除临时解压的apk文件夹
+    surely_rmdir(apk_dir)
+
+
 def usage():
     print '------------PyTest.py usage:------------'
-    print '-h, --help: print help message.'
-    print '-o, --old : input old apk file path'
-    print '-n, --new : input new apk file path'
+    print '-h, --help   : print help message.'
+    print '-o, --old    : input old apk file path'
+    print '-n, --new    : input new apk file path'
+    print '-s, --single : input single apk file path, conflict with -o & -n'
     print '----------------------------------------'
 
 
 if "__main__" == __name__:
     apk_old = None;
     apk_new = None;
+    apk_single = None;
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:n:", ["help", "output="])
 
@@ -281,15 +318,21 @@ if "__main__" == __name__:
                 apk_old = arg
             if opt in ("-n", "--new"):
                 apk_new = arg
+            if opt in ("-s", "--single"):
+                apk_single = arg
 
     except getopt.GetoptError:
         print("getopt error!");
         usage();
         sys.exit(1);
 
-    if apk_new is None or apk_old is None:
-        print("invalid input! Able to check if valid args with -o and -n");
+    if apk_single is not None:
+        print("apk_single valid, -o and -n will be ignored");
+        # 检查单个
+        get_apk_data(apk_single)
+    elif apk_new is None or apk_old is None:
+        print("invalid input! Able to check if valid args with -o and -n or -s");
         usage();
         sys.exit(1);
-
-    compare_apk(apk_old, apk_new)
+    else:
+        compare_apk(apk_old, apk_new)
