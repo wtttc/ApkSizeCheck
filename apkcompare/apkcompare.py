@@ -179,7 +179,10 @@ def walk_dict(parent, jdict, size_dict=None, method_dict=None):
             method_count = ""
         else:
             method_count += str(count)
-        print "path:" + path + "    size:" + get_size_in_nice_string(size) + method_count
+        # print "path:" + path + "    size:" + get_size_in_nice_string(size) + " method:"
+        print("path:%-35s | size: %-12s | %-17s" % (
+            path, get_size_in_nice_string(size), method_count))
+        method_count
         if isinstance(x, dict):
             walk_dict(path, x, size_dict, method_dict)
         else:
@@ -214,12 +217,13 @@ def compare_apk(apk_old, apk_new):
     old_apk_obj = dict();
     new_apk_obj = dict();
     new_method_dict = dict();
+    old_method_dict = dict();
 
     print("")
     print("")
     # 输出其中指定文件的大小
     print("============%s==============" % old_apk_dir)
-    walk_dict(old_apk_dir, jdict, old_apk_obj, None)
+    walk_dict(old_apk_dir, jdict, old_apk_obj, old_method_dict)
     print("============%s==============" % old_apk_dir)
     print("")
     print("")
@@ -262,12 +266,12 @@ def get_apk_data(apk_single):
     # 获取没有拓展名的文件名
     apk_dir = os.path.split(apk_single)[-1].split(".")[0]
 
-    apk_size = get_path_size(apk_dir)
+    apk_size = get_path_size(apk_single)
     print("apk_single:" + apk_dir + " size:" + get_size_in_nice_string(apk_size))
 
     # 解压文件夹以便分析
     surely_rmdir(apk_dir)
-    unzip_dir(apk_old, apk_dir)
+    unzip_dir(apk_single, apk_dir)
     json_object = get_json_from_file("apk_tree");
     data_string = json.dumps(json_object)
     jdict = json.loads(data_string)
@@ -301,7 +305,7 @@ if "__main__" == __name__:
     apk_new = None;
     apk_single = None;
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:n:", ["help", "output="])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:n:s:", ["help", "output="])
 
         # print("============ opts ==================");
         # print(opts);
@@ -314,15 +318,16 @@ if "__main__" == __name__:
             if opt in ("-h", "--help"):
                 usage();
                 sys.exit(1);
+            if opt in ("-s", "--single"):
+                apk_single = arg
             if opt in ("-o", "--old"):
                 apk_old = arg
             if opt in ("-n", "--new"):
                 apk_new = arg
-            if opt in ("-s", "--single"):
-                apk_single = arg
 
-    except getopt.GetoptError:
-        print("getopt error!");
+
+    except getopt.GetoptError, e:
+        print("getopt error! " + e.msg);
         usage();
         sys.exit(1);
 
