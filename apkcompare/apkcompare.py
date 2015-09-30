@@ -265,9 +265,6 @@ def compare_apk(apk_old, apk_new):
     # 方法数dict
     new_method_dict = dict()
     old_method_dict = dict()
-    # 文件dict，用于检查新文件
-    old_file_dict = dict()
-    new_file_dict = dict()
 
     print("")
     print("")
@@ -289,6 +286,11 @@ def compare_apk(apk_old, apk_new):
     print("============compare result==============")
     print("")
     print("")
+
+    # 检查出apk种新添的文件
+    # 文件dict，用于检查新文件
+    old_file_dict = dict()
+    new_file_dict = dict()
 
     # 清除临时解压的apk文件夹
     surely_rmdir(old_apk_dir)
@@ -317,7 +319,7 @@ def get_apk_data(apk_single):
     print("")
     # 输出其中指定文件的大小
     print("============%s==============" % apk_dir)
-    walk_dict(apk_dir, jdict, apk_obj, method_dict)
+    walk_dict(apk_dir, jdict, apk_obj, method_dict, apk_dir)
     print("============%s==============" % apk_dir)
 
     # 清除临时解压的apk文件夹
