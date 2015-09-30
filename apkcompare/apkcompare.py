@@ -118,11 +118,9 @@ def get_method_counts_in_file(filepath):
         # print("unzippath:" + unzippath)
         unzip_with_command(abspath, unzippath)
         dexpath = os.path.join(unzippath, "classes.dex")
-        # return get_method_counts_in_dex(dexpath)
         return get_method_count(dexpath)
     elif ".dex" in filepath:
         abspath = os.path.abspath(filepath)
-        # return get_method_counts_in_dex(abspath)
         return get_method_count(abspath)
     return None
 
@@ -240,7 +238,59 @@ def compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict):
                     k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
 
 
-def compare_apk(apk_old, apk_new):
+def dirCompare(old_path, new_path, new_dict):
+    afiles = []
+    bfiles = []
+    for root, dirs, files in os.walk(old_path):
+        for f in files:
+            afiles.append(root + os.sep + f)
+    for root, dirs, files in os.walk(new_path):
+        for f in files:
+            bfiles.append(root + os.sep + f)
+
+    apathlen = len(old_path)
+    aafiles = []
+    for f in afiles:
+        aafiles.append(f[apathlen:])
+    # 去掉afiles中文件名的apath
+    bpathlen = len(new_path)
+    bbfiles = []
+    for f in bfiles:
+        bbfiles.append(f[bpathlen:])
+    afiles = aafiles
+    bfiles = bbfiles
+    setA = set(afiles)
+    setB = set(bfiles)
+    # 处理共有文件
+    # commonfiles = setA & setB
+    # print "#================================="
+    # print "common in '", apath, "' and '", bpath, "'"
+    # print "#================================="
+    # print '\t\t\ta:\t\t\t\t\t\tb:'
+    # for f in sorted(commonfiles):
+    #     print f + "\t\t" + getPrettyTime(os.stat(apath + "\\" + f)) + "\t\t" + getPrettyTime(os.stat(new_path + "\\" + f))
+
+    # 处理仅出现在一个目录中的文件
+    onlyFiles = setA ^ setB
+    aonlyFiles = []
+    bonlyFiles = []
+    for of in onlyFiles:
+        if of in afiles:
+            aonlyFiles.append(of)
+        elif of in bfiles:
+            bonlyFiles.append(of)
+
+    # print "#only in ", old_path
+    # for of in sorted(aonlyFiles):
+    #     print of
+
+    # print "#only in ", new_path
+    for of in sorted(bonlyFiles):
+        # print of + " size:" + get_size_in_nice_string(get_path_size(str(new_path + of)))
+        new_dict[of] = get_path_size(str(new_path + of))
+
+
+def compare_apk(apk_old, apk_new, top_count=None):
     # 获取没有拓展名的文件名
     old_apk_dir = os.path.split(apk_old)[-1].split(".")[0]
     new_apk_dir = os.path.split(apk_new)[-1].split(".")[0]
@@ -289,8 +339,21 @@ def compare_apk(apk_old, apk_new):
 
     # 检查出apk种新添的文件
     # 文件dict，用于检查新文件
-    old_file_dict = dict()
     new_file_dict = dict()
+    dirCompare(old_apk_dir, new_apk_dir, new_file_dict)
+    sorted_list = sorted(new_file_dict.items(), key=lambda new_file_dict: new_file_dict[1], reverse=True)
+    count = 0
+    if top_count is not None:
+        print("============top " + str(top_count) + " large new file============")
+    else:
+        print("============new file============")
+    for kv in sorted_list:
+        if top_count is not None and int(count) > int(top_count):
+            break
+        count += 1
+        print("file:%-60s | size: %-12s " % (kv[0], get_size_in_nice_string(kv[1])))
+
+
 
     # 清除临时解压的apk文件夹
     surely_rmdir(old_apk_dir)
@@ -339,8 +402,9 @@ if "__main__" == __name__:
     apk_old = None;
     apk_new = None;
     apk_single = None;
+    top_count = None;
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:n:s:", ["help", "output="])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:n:s:t:", ["help", "output="])
 
         # print("============ opts ==================");
         # print(opts);
@@ -359,6 +423,8 @@ if "__main__" == __name__:
                 apk_old = arg
             if opt in ("-n", "--new"):
                 apk_new = arg
+            if opt in ("-t", "--topcount"):
+                top_count = arg
 
 
     except getopt.GetoptError, e:
@@ -375,4 +441,4 @@ if "__main__" == __name__:
         usage();
         sys.exit(1);
     else:
-        compare_apk(apk_old, apk_new)
+        compare_apk(apk_old, apk_new, top_count)
