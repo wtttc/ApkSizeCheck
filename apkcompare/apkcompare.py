@@ -118,7 +118,9 @@ def get_method_counts_in_file(filepath):
         # print("unzippath:" + unzippath)
         unzip_with_command(abspath, unzippath)
         dexpath = os.path.join(unzippath, "classes.dex")
-        return get_method_count(dexpath)
+        count = get_method_count(dexpath)
+        surely_rmdir(unzippath)
+        return count
     elif ".dex" in filepath:
         abspath = os.path.abspath(filepath)
         return get_method_count(abspath)
