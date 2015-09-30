@@ -179,10 +179,8 @@ def walk_dict(parent, jdict, size_dict=None, method_dict=None):
             method_count = ""
         else:
             method_count += str(count)
-        # print "path:" + path + "    size:" + get_size_in_nice_string(size) + " method:"
         print("path:%-35s | size: %-12s | %-17s" % (
             path, get_size_in_nice_string(size), method_count))
-        method_count
         if isinstance(x, dict):
             walk_dict(path, x, size_dict, method_dict)
         else:
@@ -192,6 +190,27 @@ def walk_dict(parent, jdict, size_dict=None, method_dict=None):
 def surely_rmdir(dir):
     if os.path.exists(dir) and os.path.isdir(dir):
         shutil.rmtree(dir)
+
+
+def compare_dict(new_apk_obj, old_apk_obj, new_method_dict):
+    for (k, v) in new_apk_obj.items():
+        # print("k:%s  v:%s" % (k, str(v)))
+        if old_apk_obj.has_key(k):
+            changed = v - old_apk_obj[k]
+            deltaString = ""
+            if changed < 0:
+                changed = -changed
+                deltaString = "-" + get_size_in_nice_string(changed)
+            else:
+                deltaString = get_size_in_nice_string(changed)
+
+            if new_method_dict.has_key(k):
+                method_count = new_method_dict[k]
+                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s | methods:  %-12s" % (
+                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString, method_count))
+            else:
+                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s" % (
+                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
 
 
 def compare_apk(apk_old, apk_new):
@@ -235,24 +254,7 @@ def compare_apk(apk_old, apk_new):
 
     print("============compare result==============")
     # compare
-    for (k, v) in new_apk_obj.items():
-        # print("k:%s  v:%s" % (k, str(v)))
-        if old_apk_obj.has_key(k):
-            changed = v - old_apk_obj[k]
-            deltaString = ""
-            if changed < 0:
-                changed = -changed
-                deltaString = "-" + get_size_in_nice_string(changed)
-            else:
-                deltaString = get_size_in_nice_string(changed)
-
-            if new_method_dict.has_key(k):
-                method_count = new_method_dict[k]
-                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s | methods:  %-12s" % (
-                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString, method_count))
-            else:
-                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s" % (
-                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
+    compare_dict(new_apk_obj, old_apk_obj, new_method_dict)
     print("============compare result==============")
     print("")
     print("")
