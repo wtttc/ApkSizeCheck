@@ -97,11 +97,13 @@ def unzip_dir(zipfilename, unzipdirname):
     print "Unzip file succeed!"
 
 
+# 使用命令行解压
 def unzip_with_command(jar_path, out_path):
     command = 'unzip ' + jar_path + ' -d ' + out_path
     result = os.popen(command).read()
 
 
+# 获取文件中(jar or dex)的方法数
 def get_method_counts_in_file(filepath):
     if not os.path.isfile(filepath):
         return None
@@ -152,6 +154,7 @@ def get_method_counts_in_dex(dexpath):
     return None
 
 
+# 获取dex中得方法数
 # from https://gist.github.com/jensck/4532039
 def get_method_count(dex_path):
     with open(dex_path, 'rb') as dex:
@@ -161,28 +164,47 @@ def get_method_count(dex_path):
     return struct.unpack('<I', method_count_bytes)[0]
 
 
-def walk_dict(parent, jdict, size_dict=None, method_dict=None):
+def get_folder_name(parent, floder_root):
+    # 默认情况显示最后一个文件夹的名字
+    if floder_root is not None and floder_root not in parent:
+        _list = parent.split(os.sep)
+        if _list[-1].__len__() > 0:
+            return _list[-1]
+        return _list[-2]
+
+    folder_name = os.path.split(parent)
+    if folder_name[1] == floder_root:
+        return folder_name[1].replace(floder_root, "")
+    else:
+        return get_folder_name(folder_name[0], floder_root) + os.sep + folder_name[1]
+
+
+def walk_dict(parent, jdict, size_dict=None, method_dict=None, root_name=None):
     for (d, x) in jdict.items():
         path = os.path.join(parent, d)
         size = get_path_size(path)
+        key = d
+        if root_name is not None:
+            key = get_folder_name(path, root_name)
+        # print("key:" + key)
         if size_dict is not None and isinstance(size_dict, dict):
-            size_dict[d] = size
+            size_dict[key] = size
 
         count = None
         if method_dict is not None:
             count = get_method_counts_in_file(path)
             if count is not None:
                 # print("d:" + d + " count:" + count)
-                method_dict[d] = count
+                method_dict[key] = count
         method_count = "method:"
         if count is None:
             method_count = ""
         else:
             method_count += str(count)
-        print("path:%-35s | size: %-12s | %-17s" % (
-            path, get_size_in_nice_string(size), method_count))
+        print("path:%-30s | size: %-12s | %-17s" % (
+            key, get_size_in_nice_string(size), method_count))
         if isinstance(x, dict):
-            walk_dict(path, x, size_dict, method_dict)
+            walk_dict(path, x, size_dict, method_dict, root_name)
         else:
             pass
 
@@ -192,7 +214,7 @@ def surely_rmdir(dir):
         shutil.rmtree(dir)
 
 
-def compare_dict(new_apk_obj, old_apk_obj, new_method_dict):
+def compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict):
     for (k, v) in new_apk_obj.items():
         # print("k:%s  v:%s" % (k, str(v)))
         if old_apk_obj.has_key(k):
@@ -205,11 +227,16 @@ def compare_dict(new_apk_obj, old_apk_obj, new_method_dict):
                 deltaString = get_size_in_nice_string(changed)
 
             if new_method_dict.has_key(k):
-                method_count = new_method_dict[k]
-                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s | methods:  %-12s" % (
-                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString, method_count))
+                new_method_count = new_method_dict[k]
+                old_method_count = 0
+                if old_method_dict.has_key(k):
+                    old_method_count = old_method_dict[k]
+                method_count = new_method_count - old_method_count
+                print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s | methods changed:  %-12s" % (
+                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString,
+                    str(method_count)))
             else:
-                print("file:%-20s | old: %-12s | new: %-12s | changed: %-12s" % (
+                print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s" % (
                     k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
 
 
@@ -233,28 +260,32 @@ def compare_apk(apk_old, apk_new):
     jdict = json.loads(data_string)
 
     # 键值对保存要查文件的大小，用于后面对比
-    old_apk_obj = dict();
-    new_apk_obj = dict();
-    new_method_dict = dict();
-    old_method_dict = dict();
+    old_apk_obj = dict()
+    new_apk_obj = dict()
+    # 方法数dict
+    new_method_dict = dict()
+    old_method_dict = dict()
+    # 文件dict，用于检查新文件
+    old_file_dict = dict()
+    new_file_dict = dict()
 
     print("")
     print("")
     # 输出其中指定文件的大小
     print("============%s==============" % old_apk_dir)
-    walk_dict(old_apk_dir, jdict, old_apk_obj, old_method_dict)
+    walk_dict(old_apk_dir, jdict, old_apk_obj, old_method_dict, old_apk_dir)
     print("============%s==============" % old_apk_dir)
     print("")
     print("")
     print("============%s==============" % new_apk_dir)
-    walk_dict(new_apk_dir, jdict, new_apk_obj, new_method_dict)
+    walk_dict(new_apk_dir, jdict, new_apk_obj, new_method_dict, new_apk_dir)
     print("============%s==============" % new_apk_dir)
     print("")
     print("")
 
     print("============compare result==============")
     # compare
-    compare_dict(new_apk_obj, old_apk_obj, new_method_dict)
+    compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict)
     print("============compare result==============")
     print("")
     print("")
