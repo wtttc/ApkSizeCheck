@@ -326,7 +326,9 @@ def compare_apk(apk_old, apk_new, top_count=None):
     # 解压文件夹以便分析
     surely_rmdir(old_apk_dir)
     surely_rmdir(new_apk_dir)
+    print("start to unzip apk old")
     unzip_dir(apk_old, old_apk_dir)
+    print("start to unzip apk new")
     unzip_dir(apk_new, new_apk_dir)
     json_object = get_json_from_file("apk_tree");
     data_string = json.dumps(json_object)
