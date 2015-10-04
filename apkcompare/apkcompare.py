@@ -79,22 +79,43 @@ def get_path_size(strPath):
 def unzip_dir(zipfilename, unzipdirname):
     fullzipfilename = os.path.abspath(zipfilename)
     fullunzipdirname = os.path.abspath(unzipdirname)
-    print "Start to unzip file %s to folder %s ..." % (zipfilename, unzipdirname)
+    # print "Start to unzip file %s to folder %s ..." % (zipfilename, unzipdirname)
+    # Check input ...
+    if not os.path.exists(fullzipfilename):
+        print "Dir/File %s is not exist, Press any key to quit..." % fullzipfilename
+        inputStr = raw_input()
+        return
     if not os.path.exists(fullunzipdirname):
         os.mkdir(fullunzipdirname)
+    else:
+        if os.path.isfile(fullunzipdirname):
+            print "File %s is exist, are you sure to delet it first ? [Y/N]" % fullunzipdirname
+            while 1:
+                inputStr = raw_input()
+                if inputStr == "N" or inputStr == "n":
+                    return
+                else:
+                    if inputStr == "Y" or inputStr == "y":
+                        os.remove(fullunzipdirname)
+                        print "Continue to unzip files ..."
+                        break
 
+    # Start extract files ...
     srcZip = zipfile.ZipFile(fullzipfilename, "r")
     for eachfile in srcZip.namelist():
-        # print "Unzip file %s ..." % eachfile
-        eachfilename = os.path.normpath(os.path.join(fullunzipdirname, eachfile))
-        eachdirname = os.path.dirname(eachfilename)
-        if not os.path.exists(eachdirname):
-            os.makedirs(eachdirname)
-        fd = open(eachfilename, "wb")
-        fd.write(srcZip.read(eachfile))
-        fd.close()
+        try:
+            # print "Unzip file %s ..." % eachfile
+            eachfilename = os.path.normpath(os.path.join(fullunzipdirname, eachfile))
+            eachdirname = os.path.dirname(eachfilename)
+            if not os.path.exists(eachdirname):
+                os.makedirs(eachdirname)
+            fd = open(eachfilename, "wb")
+            fd.write(srcZip.read(eachfile))
+            fd.close()
+        except Exception,e:
+            pass
     srcZip.close()
-    print "Unzip file succeed!"
+    # print "Unzip file succeed!"
 
 
 # 使用命令行解压
@@ -116,7 +137,7 @@ def get_method_counts_in_file(filepath):
         # print("floderpath:" + floderpath)
         unzippath = os.path.join(floderpath, filename)
         # print("unzippath:" + unzippath)
-        unzip_with_command(abspath, unzippath)
+        unzip_dir(abspath, unzippath)
         dexpath = os.path.join(unzippath, "classes.dex")
         count = get_method_count(dexpath)
         surely_rmdir(unzippath)
