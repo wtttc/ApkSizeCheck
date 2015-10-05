@@ -112,7 +112,7 @@ def unzip_dir(zipfilename, unzipdirname):
             fd = open(eachfilename, "wb")
             fd.write(srcZip.read(eachfile))
             fd.close()
-        except Exception,e:
+        except Exception, e:
             pass
     srcZip.close()
     # print "Unzip file succeed!"
@@ -414,6 +414,14 @@ def get_apk_data(apk_single):
     surely_rmdir(apk_dir)
 
 
+def check_apk_name_valid(name):
+    apk_name = os.path.split(name)[-1]
+    count = apk_name.count(".") + apk_name.count(" ")
+    if count > 1:
+        print("Find name invalid, please rename to continue.")
+        sys.exit(1)
+
+
 def usage():
     print '------------PyTest.py usage:------------'
     print '-h, --help   : print help message.'
@@ -454,16 +462,19 @@ if "__main__" == __name__:
 
     except getopt.GetoptError, e:
         print("getopt error! " + e.msg);
-        usage();
-        sys.exit(1);
+        usage()
+        sys.exit(1)
 
     if apk_single is not None:
         print("apk_single valid, -o and -n will be ignored");
         # 检查单个
+        check_apk_name_valid(apk_single)
         get_apk_data(apk_single)
     elif apk_new is None or apk_old is None:
         print("invalid input! Able to check if valid args with -o and -n or -s");
-        usage();
-        sys.exit(1);
+        usage()
+        sys.exit(1)
     else:
+        check_apk_name_valid(apk_new)
+        check_apk_name_valid(apk_old)
         compare_apk(apk_old, apk_new, top_count)
