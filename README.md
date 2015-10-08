@@ -48,56 +48,50 @@ Simple py script to check the change of apk size
     ```
     
         '------------PyTest.py usage:------------'
-        '-h, --help: print help message.'
-        '-o, --old : input old apk file path'
-        '-n, --new : input new apk file path'
+        '-h, --help     : print help message.'
+        '-o, --old      : input old apk file path'
+        '-n, --new      : input new apk file path'
+        '-s, --single   : input single apk file path, conflict with -o & -n'
+        '-t, --topcount : show the top "n" largest new file in apk'
         '----------------------------------------'
  
     ```
-    
-    Weibo apk for example:
-    
-    cd:
-        
-    ![image](images/cd.png)
-        
-    command:
-        
-    ![image](images/command.png)
 
 4. read output, weibo for wxample
     
     ```
     
-        ============weibo530==============
-        path:weibo530/resources.arsc    size:1.6 MB
-        path:weibo530/assets    size:80.3 MB
-        path:weibo530/assets/sync.jar    size:109.5 KB
-        path:weibo530/assets/appmarket.jar    size:457.8 KB
-        path:weibo530/assets/browser.jar    size:141.6 KB
-        ...
-        ============weibo530==============
+        sinasdk:apkcompare easytang$ python apkcompare.py -o weibo540.apk -n weibo545.apk -t 10
+        
+        apk_old:weibo540.apk size:36.5 MB
+        apk_new:weibo545.apk size:39.1 MB
+        start to unzip apk old
+        start to unzip apk new
         
         
         ============weibo540==============
-        path:weibo540/resources.arsc    size:1.6 MB
-        path:weibo540/assets    size:79.4 MB
-        path:weibo540/assets/sync.jar    size:111.9 KB
-        path:weibo540/assets/appmarket.jar    size:528.2 KB
-        path:weibo540/assets/browser.jar    size:150.0 KB
-        ...
+        path:/resources.arsc                | size: 1.6 MB       |
+        path:/assets                        | size: 79.4 MB      |
+        ......
         ============weibo540==============
         
         
+        ============weibo545==============
+        path:/resources.arsc                | size: 1.7 MB       |
+        path:/assets                        | size: 82.2 MB      |
+        ......
+        ============weibo545==============
+        
+        
         ============compare result==============
-        file:sync.jar has changed 2.4 KB
-        file:resources.arsc has changed 62.3 KB
-        file:raw has changed 3 bytes
-        file:drawable-hdpi has changed 202.7 KB
-        file:layout has changed 16.6 KB
-        file:lib has changed 1.7 MB
-        ...
+        file:/res/drawable-hdpi             | old: 5.3 MB       | new: 4.9 MB       | changed: -447.9 KB   
+        ......
         ============compare result==============
+        
+        
+        ============top 10 large new file============
+        file:/assets/MusicVideoAssets.zip                                 | size: 1.6 MB
+        ......
     
     ```
 
