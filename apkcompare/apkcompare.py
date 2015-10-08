@@ -3,7 +3,6 @@
 import json
 import functools
 import os
-import subprocess
 import sys
 import zipfile
 import shutil
@@ -85,20 +84,14 @@ def unzip_dir(zipfilename, unzipdirname):
         print "Dir/File %s is not exist, Press any key to quit..." % fullzipfilename
         inputStr = raw_input()
         return
+    # remove exist file or floder
     if not os.path.exists(fullunzipdirname):
         os.mkdir(fullunzipdirname)
     else:
         if os.path.isfile(fullunzipdirname):
-            print "File %s is exist, are you sure to delet it first ? [Y/N]" % fullunzipdirname
             while 1:
-                inputStr = raw_input()
-                if inputStr == "N" or inputStr == "n":
-                    return
-                else:
-                    if inputStr == "Y" or inputStr == "y":
-                        os.remove(fullunzipdirname)
-                        print "Continue to unzip files ..."
-                        break
+                os.remove(fullunzipdirname)
+                break
 
     # Start extract files ...
     srcZip = zipfile.ZipFile(fullzipfilename, "r")
@@ -112,16 +105,10 @@ def unzip_dir(zipfilename, unzipdirname):
             fd = open(eachfilename, "wb")
             fd.write(srcZip.read(eachfile))
             fd.close()
-        except Exception,e:
+        except Exception, e:
             pass
     srcZip.close()
     # print "Unzip file succeed!"
-
-
-# 使用命令行解压
-def unzip_with_command(jar_path, out_path):
-    command = 'unzip ' + jar_path + ' -d ' + out_path
-    result = os.popen(command).read()
 
 
 # 获取文件中(jar or dex)的方法数
@@ -148,33 +135,6 @@ def get_method_counts_in_file(filepath):
     return None
 
 
-# http://mp.weixin.qq.com/s?__biz=MzAwNDY1ODY2OQ==&amp;mid=208008519&amp;idx=1&amp;sn=278b7793699a654b51588319b15b3013&amp;scene=1&amp;srcid=0924KyxvtDNaHGrK2iL76iiH#rd
-def get_method_counts_in_dex(dexpath):
-    if not os.path.isfile(dexpath):
-        return None
-    # print("dexpath:" + dexpath)
-    # command = "cat " + dexpath + " | head -c 92 | tail -c 4 | hexdump -e \'1/4 \"%d\n\"'"
-    # result = os.popen(command, stdout=subprocess.PIPE, shell=True)
-
-    # 该方法在mac上总是报错
-    try:
-        # p1 = subprocess.Popen('cat ' + dexpath, stdout=subprocess.PIPE, shell=True)
-        # p2 = subprocess.Popen('head -c 92', stdin=p1.stdout, stdout=subprocess.PIPE, shell=True)
-        # p1.stdout.close()
-        # p3 = subprocess.Popen('tail -c 4', stdin=p2.stdout, stdout=subprocess.PIPE, shell=True)
-        # p2.stdout.close()
-        # handle = subprocess.Popen("hexdump -e \'1/4 \"%d\n\"\'", stdin=p3.stdout, stdout=subprocess.PIPE, shell=True)
-        # p3.stdout.close()
-        # # print handle.stdout.read()
-        # return str(handle.communicate()[0])
-        output = subprocess.check_output("cat " + dexpath + " | head -c 92 | tail -c 4 | hexdump -e \'1/4 \"%d\n\"\'",
-                                         shell=True)
-        return output
-    except Exception, e:
-        print("catch exception:", e)
-    return None
-
-
 # 获取dex中得方法数
 # from https://gist.github.com/jensck/4532039
 def get_method_count(dex_path):
@@ -185,6 +145,7 @@ def get_method_count(dex_path):
     return struct.unpack('<I', method_count_bytes)[0]
 
 
+# 获取到floder_root路径文件夹的路径
 def get_folder_name(parent, floder_root):
     # 默认情况显示最后一个文件夹的名字
     if floder_root is not None and floder_root not in parent:
@@ -414,12 +375,21 @@ def get_apk_data(apk_single):
     surely_rmdir(apk_dir)
 
 
+def check_apk_name_valid(name):
+    apk_name = os.path.split(name)[-1]
+    count = apk_name.count(".") + apk_name.count(" ")
+    if count > 1:
+        print("Find name invalid, please rename to continue.")
+        sys.exit(1)
+
+
 def usage():
     print '------------PyTest.py usage:------------'
-    print '-h, --help   : print help message.'
-    print '-o, --old    : input old apk file path'
-    print '-n, --new    : input new apk file path'
-    print '-s, --single : input single apk file path, conflict with -o & -n'
+    print '-h, --help     : print help message.'
+    print '-o, --old      : input old apk file path'
+    print '-n, --new      : input new apk file path'
+    print '-s, --single   : input single apk file path, conflict with -o & -n'
+    print '-t, --topcount : show the top "n" largest new file in apk'
     print '----------------------------------------'
 
 
@@ -454,16 +424,19 @@ if "__main__" == __name__:
 
     except getopt.GetoptError, e:
         print("getopt error! " + e.msg);
-        usage();
-        sys.exit(1);
+        usage()
+        sys.exit(1)
 
     if apk_single is not None:
         print("apk_single valid, -o and -n will be ignored");
         # 检查单个
+        check_apk_name_valid(apk_single)
         get_apk_data(apk_single)
     elif apk_new is None or apk_old is None:
         print("invalid input! Able to check if valid args with -o and -n or -s");
-        usage();
-        sys.exit(1);
+        usage()
+        sys.exit(1)
     else:
+        check_apk_name_valid(apk_new)
+        check_apk_name_valid(apk_old)
         compare_apk(apk_old, apk_new, top_count)
