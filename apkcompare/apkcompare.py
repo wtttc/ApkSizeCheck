@@ -84,20 +84,14 @@ def unzip_dir(zipfilename, unzipdirname):
         print "Dir/File %s is not exist, Press any key to quit..." % fullzipfilename
         inputStr = raw_input()
         return
+    # remove exist file or floder
     if not os.path.exists(fullunzipdirname):
         os.mkdir(fullunzipdirname)
     else:
         if os.path.isfile(fullunzipdirname):
-            print "File %s is exist, are you sure to delet it first ? [Y/N]" % fullunzipdirname
             while 1:
-                inputStr = raw_input()
-                if inputStr == "N" or inputStr == "n":
-                    return
-                else:
-                    if inputStr == "Y" or inputStr == "y":
-                        os.remove(fullunzipdirname)
-                        print "Continue to unzip files ..."
-                        break
+                os.remove(fullunzipdirname)
+                break
 
     # Start extract files ...
     srcZip = zipfile.ZipFile(fullzipfilename, "r")
@@ -151,6 +145,7 @@ def get_method_count(dex_path):
     return struct.unpack('<I', method_count_bytes)[0]
 
 
+# 获取到floder_root路径文件夹的路径
 def get_folder_name(parent, floder_root):
     # 默认情况显示最后一个文件夹的名字
     if floder_root is not None and floder_root not in parent:
@@ -390,10 +385,11 @@ def check_apk_name_valid(name):
 
 def usage():
     print '------------PyTest.py usage:------------'
-    print '-h, --help   : print help message.'
-    print '-o, --old    : input old apk file path'
-    print '-n, --new    : input new apk file path'
-    print '-s, --single : input single apk file path, conflict with -o & -n'
+    print '-h, --help     : print help message.'
+    print '-o, --old      : input old apk file path'
+    print '-n, --new      : input new apk file path'
+    print '-s, --single   : input single apk file path, conflict with -o & -n'
+    print '-t, --topcount : show the top "n" largest new file in apk'
     print '----------------------------------------'
 
 
