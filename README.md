@@ -98,9 +98,9 @@ Simple py script to check the change of apk size
 -----
 ## Fixme
 1. 
-    ~~ Since using dict to compare, result will be not specific enough when **file with the same name in different floders**. ~~
+    <s> Since using dict to compare, result will be not specific enough when **file with the same name in different floders**. </s>
     
-    ~~ for example ~~
+    <s> for example </s>
         
         ```
         
@@ -109,6 +109,6 @@ Simple py script to check the change of apk size
         
         ```
         
-    ~~ will only show one compare result ~~
+    <s> will only show one compare result </s>
 2. build path
 3. unchecked on linux
