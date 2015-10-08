@@ -57,7 +57,7 @@ Simple py script to check the change of apk size
  
     ```
 
-4. read output, weibo for wxample
+4. read output, weibo for example
     
     ```
     
