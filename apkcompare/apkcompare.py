@@ -39,6 +39,9 @@ def get_json_from_file(file_dir):
 
 # 转换大小显示
 def get_size_in_nice_string(sizeInBytes):
+    if sizeInBytes < 0:
+        return "-" + get_size_in_nice_string(-sizeInBytes)
+
     for (cutoff, label) in [(1024 * 1024 * 1024, "GB"),
                             (1024 * 1024, "MB"),
                             (1024, "KB"),
@@ -201,12 +204,6 @@ def compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict):
         # print("k:%s  v:%s" % (k, str(v)))
         if old_apk_obj.has_key(k):
             changed = v - old_apk_obj[k]
-            deltaString = ""
-            if changed < 0:
-                changed = -changed
-                deltaString = "-" + get_size_in_nice_string(changed)
-            else:
-                deltaString = get_size_in_nice_string(changed)
 
             if new_method_dict.has_key(k):
                 new_method_count = new_method_dict[k]
@@ -215,14 +212,16 @@ def compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict):
                     old_method_count = old_method_dict[k]
                 method_count = new_method_count - old_method_count
                 print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s | methods changed:  %-12s" % (
-                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString,
+                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v),
+                    get_size_in_nice_string(changed),
                     str(method_count)))
             else:
                 print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s" % (
-                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v), deltaString))
+                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v),
+                    get_size_in_nice_string(changed)))
 
 
-def dirCompare(old_path, new_path, new_dict):
+def dirCompare(old_path, new_path, new_dict, removed_dict, changed_dict):
     afiles = []
     bfiles = []
     for root, dirs, files in os.walk(old_path):
@@ -246,13 +245,11 @@ def dirCompare(old_path, new_path, new_dict):
     setA = set(afiles)
     setB = set(bfiles)
     # 处理共有文件
-    # commonfiles = setA & setB
-    # print "#================================="
-    # print "common in '", apath, "' and '", bpath, "'"
-    # print "#================================="
-    # print '\t\t\ta:\t\t\t\t\t\tb:'
-    # for f in sorted(commonfiles):
-    #     print f + "\t\t" + getPrettyTime(os.stat(apath + "\\" + f)) + "\t\t" + getPrettyTime(os.stat(new_path + "\\" + f))
+    commonfiles = setA & setB
+    for of in sorted(commonfiles):
+        size_changed = get_path_size(str(new_path + of)) - get_path_size(str(old_path + of))
+        if size_changed != 0:
+            changed_dict[of] = size_changed
 
     # 处理仅出现在一个目录中的文件
     onlyFiles = setA ^ setB
@@ -265,13 +262,27 @@ def dirCompare(old_path, new_path, new_dict):
             bonlyFiles.append(of)
 
     # print "#only in ", old_path
-    # for of in sorted(aonlyFiles):
-    #     print of
+    for of in sorted(aonlyFiles):
+        removed_dict[of] = get_path_size(str(old_path + of))
 
     # print "#only in ", new_path
     for of in sorted(bonlyFiles):
         # print of + " size:" + get_size_in_nice_string(get_path_size(str(new_path + of)))
         new_dict[of] = get_path_size(str(new_path + of))
+
+
+def print_top_dict(dict, top_count=None, dict_name=""):
+    dict = sorted(dict.items(), key=lambda dict: dict[1], reverse=True)
+    count = 0
+    if top_count is not None:
+        print("============top " + str(top_count) + " in " + dict_name + "============")
+    else:
+        print("============" + dict_name + "============")
+    for kv in dict:
+        if top_count is not None and int(count) > int(top_count):
+            break
+        count += 1
+        print("file:%-60s | size: %-12s " % (kv[0], get_size_in_nice_string(kv[1])))
 
 
 def compare_apk(apk_old, apk_new, top_count=None):
@@ -326,20 +337,16 @@ def compare_apk(apk_old, apk_new, top_count=None):
     # 检查出apk种新添的文件
     # 文件dict，用于检查新文件
     new_file_dict = dict()
-    dirCompare(old_apk_dir, new_apk_dir, new_file_dict)
-    sorted_list = sorted(new_file_dict.items(), key=lambda new_file_dict: new_file_dict[1], reverse=True)
-    count = 0
-    if top_count is not None:
-        print("============top " + str(top_count) + " large new file============")
-    else:
-        print("============new file============")
-    for kv in sorted_list:
-        if top_count is not None and int(count) > int(top_count):
-            break
-        count += 1
-        print("file:%-60s | size: %-12s " % (kv[0], get_size_in_nice_string(kv[1])))
-
-
+    removed_file_dict = dict()
+    changed_file_dict = dict()
+    dirCompare(old_apk_dir, new_apk_dir, new_file_dict, removed_file_dict, changed_file_dict)
+    print_top_dict(new_file_dict, top_count, "new file")
+    print("")
+    print("")
+    print_top_dict(removed_file_dict, top_count, "removed file")
+    print("")
+    print("")
+    print_top_dict(changed_file_dict, top_count, "changed file")
 
     # 清除临时解压的apk文件夹
     surely_rmdir(old_apk_dir)

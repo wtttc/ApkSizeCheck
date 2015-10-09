@@ -89,8 +89,14 @@ Simple py script to check the change of apk size
         ============compare result==============
         
         
-        ============top 10 large new file============
+        ============new file============
         file:/assets/MusicVideoAssets.zip                                 | size: 1.6 MB
+        ......
+        
+        ============removed file============
+        ......
+                
+        ============changed file============
         ......
     
     ```
