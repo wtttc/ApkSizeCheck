@@ -1,10 +1,11 @@
-# ApkSizeCompare
-Simple py script to check the change of apk size.
+# ApkSizeCheck
+Simple py script to check the change of apk size & check images can be optimize to shrink apk.
 
 -----
+# apkcompare
 ## Useage
 1. Download it
-2. Modify apkcompare/apk_tree. You can unzip the apk to specify the file. Formatting is encouraged. Weibo apk for example.
+2. Modify apksizecheck/apk_tree. You can unzip the apk to specify the file. Formatting is encouraged. Weibo apk for example.
     
     ```
     
@@ -43,7 +44,7 @@ Simple py script to check the change of apk size.
 
     ```
    
-3. cd into the absolute path, run the py script with 
+3. cd into the absolute path, run the apkcompare.py script with 
     
     ```
     
@@ -55,6 +56,15 @@ Simple py script to check the change of apk size.
         '-t, --top      : show the top "n" file new/removed/changed in apk'
         '----------------------------------------'
  
+    ```
+    
+    for example:
+    
+    ```
+    
+        python apkcompare.py -o weibo540.apk -n weibo545.apk
+        
+    
     ```
 
 4. read output, weibo for example
@@ -98,6 +108,64 @@ Simple py script to check the change of apk size.
                 
         ============changed file============
         ......
+    
+    ```
+
+-----
+# apkimagecheck
+## Useage
+1. Download it
+2. cd into the absolute path, run the apkimagecheck.py script with 
+    
+    ```
+    
+        '------------apkimagecheck.py usage:------------'
+        '-h, --help     : print help message.'
+        '-f, --file     : apk file'
+        '-a, --alpha    : not 0 (default)-> not check pic with no alpha; 0 -> check'
+        '-v, --value    : alpha check value, default 255(check pic without even a little alpha)'
+        '-l, --limit    : file size limit in byte (1024 -> 1K)'
+        '-i, --ignore9  : not 0 (default)-> ignore .9; 0 -> check .9'
+        '----------------------------------------'
+    
+    ```
+    
+    for example:
+    
+    ```
+    
+        python apkcompare.py -o weibo540.apk -n weibo545.apk
+        
+    
+    ```
+3. read output, weibo for example
+
+    ```
+    
+        sinasdk:apksizecheck easytang$ python apkimagecheck.py -f weibo545.apk
+        
+        apk:weibo545.apk
+        start to unzip apk
+        
+        ============ check size limit ==================
+        IMAGE:/assets/offlinemap2.png  size:80.2 KB
+        IMAGE:/assets/effects/filter/pictureFilter/localFilter/filters/100/filter_icon.png  size:61.8 KB
+        IMAGE:/assets/effects/filter/pictureFilter/localFilter/filters/102/filter_icon.png  size:61.8 KB
+        ......
+        These files may be too large.(larger than 39.1 KB)
+        ============ check size limit ==================
+        
+        
+        ============ check image alpha ==================
+        This is not image: weibo545/assets/offlinemap2.png
+        
+        IMAGE:/assets/effects/filter/pictureFilter/localFilter/filters/100/filter_icon.png
+        IMAGE:/assets/effects/filter/pictureFilter/localFilter/filters/102/amber.png
+        IMAGE:/assets/effects/filter/pictureFilter/localFilter/filters/102/amber_adjust.png
+        ......
+        These 59 image(s) may be pngs with no alpha, considering jpeg?
+        ============ check image alpha ==================
+        
     
     ```
 

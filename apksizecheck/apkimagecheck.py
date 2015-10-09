@@ -11,6 +11,9 @@ import utils
 
 __author__ = 'tiantong'
 
+ALPHA_IMAGE_FORMAT = [".png"]
+LIMIT_IMAGE_FORMAT = [".png", ".jpg", ".jpeg", ".gif", ".bmp"]
+
 
 def check_img_mode(filepath, value=255):
     try:
@@ -39,13 +42,33 @@ def check_img_mode(filepath, value=255):
     return img.mode
 
 
-ALPHA_IMAGE_FORMAT = [".png"]
+def check_image_limit(apk, apk_dir, limit=40000):
+    count = 0
+    for parent, dir_names, filenames in os.walk(apk_dir):
+        for filename in filenames:
+            # 获取文件的绝对路径
+            path = os.path.join(parent, filename)
+
+            # 过滤文件类型
+            if not os.path.splitext(filename)[1] in LIMIT_IMAGE_FORMAT:
+                continue
+
+            # 判断文件存在
+            if not filename:
+                continue
+
+            file_size = utils.get_path_size(path)
+            if long(file_size) > long(limit):
+                image_path = utils.get_folder_name(parent, apk_dir) + os.sep + filename
+                print('IMAGE:%s  size:%s' % (image_path, utils.get_size_in_nice_string(file_size)))
+                count += 1
+    if count > 0:
+        print("These files may be too large.(larger than %s)" % utils.get_size_in_nice_string(int(limit)))
 
 
 def check_apk_alpha(apk, apk_dir, ignore9, value=255):
     # 遍历要扫描的文件夹s
     count = 0
-    print("apk_dir:" + apk_dir)
     # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
     for parent, dir_names, filenames in os.walk(apk_dir):
         for filename in filenames:
@@ -66,14 +89,15 @@ def check_apk_alpha(apk, apk_dir, ignore9, value=255):
             # 检查文件类型
             mode = check_img_mode(path, value)
             if mode == 'RGB':
-                print ('IMAGE:' + utils.get_folder_name(parent, apk_dir) + os.sep + filename)
+                image_path = utils.get_folder_name(parent, apk_dir) + os.sep + filename
+                print ('IMAGE:' + image_path)
                 count += 1
 
     if count > 0:
         print('These %s image(s) may be pngs with no alpha, considering jpeg?' % count)
 
 
-def apk_image_check(check_alpha=False, limit=None, apk=None, ignore9=True, value=255):
+def apk_image_check(check_alpha=True, limit=40000, apk=None, ignore9=True, value=255):
     if apk is None:
         print("invalid apk file or name")
         exit()
@@ -90,17 +114,18 @@ def apk_image_check(check_alpha=False, limit=None, apk=None, ignore9=True, value
     utils.surely_rmdir(apk_dir)
     utils.unzip_dir(apk, apk_dir)
 
-    print("")
-    print("check size limit")
     if limit is not None:
-        print("limit " + str(limit));
-        # check_limit()
+        print("")
+        print("============ check size limit ==================");
+        check_image_limit(apk, apk_dir, limit)
+        print("============ check size limit ==================");
 
-    print("")
-    print("")
-    print("check image alpha")
     if check_alpha:
+        print("")
+        print("")
+        print("============ check image alpha ==================");
         check_apk_alpha(apk, apk_dir, ignore9, value)
+        print("============ check image alpha ==================");
     print("")
 
     # 移除分析用的解压出来的文件
@@ -125,8 +150,8 @@ def exit():
 
 
 if "__main__" == __name__:
-    check_alpha = False
-    limit = None;
+    check_alpha = True
+    limit = 40000;
     apk = None;
     ignore9 = True
     value = 255
@@ -162,6 +187,5 @@ if "__main__" == __name__:
         exit()
 
     print("")
-    apk_image_check(check_alpha, limit, apk, ignore9, value
-                    )
+    apk_image_check(check_alpha, limit, apk, ignore9, value)
     print("")
