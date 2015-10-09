@@ -1,5 +1,5 @@
 # ApkSizeCompare
-Simple py script to check the change of apk size
+Simple py script to check the change of apk size.
 
 -----
 ## Useage
@@ -52,7 +52,7 @@ Simple py script to check the change of apk size
         '-o, --old      : input old apk file path'
         '-n, --new      : input new apk file path'
         '-s, --single   : input single apk file path, conflict with -o & -n'
-        '-t, --topcount : show the top "n" largest new file in apk'
+        '-t, --top      : show the top "n" file new/removed/changed in apk'
         '----------------------------------------'
  
     ```

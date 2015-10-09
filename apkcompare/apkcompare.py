@@ -271,29 +271,29 @@ def dirCompare(old_path, new_path, new_dict, removed_dict, changed_dict):
         new_dict[of] = get_path_size(str(new_path + of))
 
 
-def print_top_dict(dict, top_count=None, dict_name=""):
+def print_top_dict(dict, top=None, dict_name=""):
     dict = sorted(dict.items(), key=lambda dict: dict[1], reverse=True)
     count = 0
-    if top_count is not None:
-        print("============top " + str(top_count) + " in " + dict_name + "============")
+    if top is not None:
+        print("============top %s in %s ============" % (str(top), dict_name))
     else:
-        print("============" + dict_name + "============")
+        print("============%s============" % dict_name)
     for kv in dict:
-        if top_count is not None and int(count) > int(top_count):
+        if top is not None and int(count) > int(top):
             break
         count += 1
         print("file:%-60s | size: %-12s " % (kv[0], get_size_in_nice_string(kv[1])))
 
 
-def compare_apk(apk_old, apk_new, top_count=None):
+def compare_apk(apk_old, apk_new, top=None):
     # 获取没有拓展名的文件名
     old_apk_dir = os.path.split(apk_old)[-1].split(".")[0]
     new_apk_dir = os.path.split(apk_new)[-1].split(".")[0]
 
     old_size = get_path_size(apk_old)
     new_size = get_path_size(apk_new)
-    print("apk_old:" + apk_old + " size:" + get_size_in_nice_string(old_size))
-    print("apk_new:" + apk_new + " size:" + get_size_in_nice_string(new_size))
+    print("apk_old:%s size: %s" % (apk_old, get_size_in_nice_string(old_size)))
+    print("apk_new:%s size: %s" % (apk_new, get_size_in_nice_string(new_size)))
 
     # 解压文件夹以便分析
     surely_rmdir(old_apk_dir)
@@ -340,13 +340,13 @@ def compare_apk(apk_old, apk_new, top_count=None):
     removed_file_dict = dict()
     changed_file_dict = dict()
     dirCompare(old_apk_dir, new_apk_dir, new_file_dict, removed_file_dict, changed_file_dict)
-    print_top_dict(new_file_dict, top_count, "new file")
+    print_top_dict(new_file_dict, top, "new file")
     print("")
     print("")
-    print_top_dict(removed_file_dict, top_count, "removed file")
+    print_top_dict(removed_file_dict, top, "removed file")
     print("")
     print("")
-    print_top_dict(changed_file_dict, top_count, "changed file")
+    print_top_dict(changed_file_dict, top, "changed file")
 
     # 清除临时解压的apk文件夹
     surely_rmdir(old_apk_dir)
@@ -358,7 +358,7 @@ def get_apk_data(apk_single):
     apk_dir = os.path.split(apk_single)[-1].split(".")[0]
 
     apk_size = get_path_size(apk_single)
-    print("apk_single:" + apk_dir + " size:" + get_size_in_nice_string(apk_size))
+    print("apk_single:%s size: %s" % (apk_dir, get_size_in_nice_string(apk_size)))
 
     # 解压文件夹以便分析
     surely_rmdir(apk_dir)
@@ -396,7 +396,7 @@ def usage():
     print '-o, --old      : input old apk file path'
     print '-n, --new      : input new apk file path'
     print '-s, --single   : input single apk file path, conflict with -o & -n'
-    print '-t, --topcount : show the top "n" largest new file in apk'
+    print '-t, --top      : show the top "n" file new/removed/changed in apk'
     print '----------------------------------------'
 
 
@@ -404,7 +404,7 @@ if "__main__" == __name__:
     apk_old = None;
     apk_new = None;
     apk_single = None;
-    top_count = None;
+    top = None;
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:n:s:t:", ["help", "output="])
 
@@ -425,8 +425,8 @@ if "__main__" == __name__:
                 apk_old = arg
             if opt in ("-n", "--new"):
                 apk_new = arg
-            if opt in ("-t", "--topcount"):
-                top_count = arg
+            if opt in ("-t", "--top"):
+                top = arg
 
 
     except getopt.GetoptError, e:
@@ -446,4 +446,4 @@ if "__main__" == __name__:
     else:
         check_apk_name_valid(apk_new)
         check_apk_name_valid(apk_old)
-        compare_apk(apk_old, apk_new, top_count)
+        compare_apk(apk_old, apk_new, top)
