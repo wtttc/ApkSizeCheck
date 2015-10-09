@@ -271,7 +271,7 @@ def dirCompare(old_path, new_path, new_dict, removed_dict, changed_dict):
         new_dict[of] = get_path_size(str(new_path + of))
 
 
-def print_top_dict(dict, top=None, dict_name=""):
+def print_top_dict(dict=dict(), top=None, dict_name=""):
     dict = sorted(dict.items(), key=lambda dict: dict[1], reverse=True)
     count = 0
     if top is not None:

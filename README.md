@@ -118,3 +118,4 @@ Simple py script to check the change of apk size.
     <s> will only show one compare result </s>
 2. build path
 3. unchecked on linux
+4. unable to check method count if not simply dex file or a dex in jar. (should modify method get_method_counts_in_file)
