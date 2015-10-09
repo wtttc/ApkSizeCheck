@@ -285,15 +285,24 @@ def print_top_dict(dict=dict(), top=None, dict_name=""):
         print("file:%-60s | size: %-12s " % (kv[0], get_size_in_nice_string(kv[1])))
 
 
+def check_unzipped_apk(apk_name, apk_path):
+    file_count = sum([len(x) for _, _, x in os.walk(apk_path)])
+    floder_size = get_size_in_nice_string(get_path_size(apk_path))
+    print("apk:%s   size: %s   files: %s" % (apk_name, floder_size, file_count))
+
+
 def compare_apk(apk_old, apk_new, top=None):
     # 获取没有拓展名的文件名
     old_apk_dir = os.path.split(apk_old)[-1].split(".")[0]
     new_apk_dir = os.path.split(apk_new)[-1].split(".")[0]
+    print("old_apk_dir:" + old_apk_dir)
+    print("new_apk_dir:" + new_apk_dir)
 
     old_size = get_path_size(apk_old)
     new_size = get_path_size(apk_new)
     print("apk_old:%s size: %s" % (apk_old, get_size_in_nice_string(old_size)))
     print("apk_new:%s size: %s" % (apk_new, get_size_in_nice_string(new_size)))
+    print("")
 
     # 解压文件夹以便分析
     surely_rmdir(old_apk_dir)
@@ -302,6 +311,12 @@ def compare_apk(apk_old, apk_new, top=None):
     unzip_dir(apk_old, old_apk_dir)
     print("start to unzip apk new")
     unzip_dir(apk_new, new_apk_dir)
+    print("")
+
+    print("unzip apk info:")
+    check_unzipped_apk(apk_old, old_apk_dir)
+    check_unzipped_apk(apk_new, new_apk_dir)
+
     json_object = get_json_from_file("apk_tree");
     data_string = json.dumps(json_object)
     jdict = json.loads(data_string)
@@ -361,8 +376,13 @@ def get_apk_data(apk_single):
     print("apk_single:%s size: %s" % (apk_dir, get_size_in_nice_string(apk_size)))
 
     # 解压文件夹以便分析
+    print("start to unzip apk single")
     surely_rmdir(apk_dir)
     unzip_dir(apk_single, apk_dir)
+
+    print("unzip apk info:")
+    check_unzipped_apk(apk_single, apk_dir)
+
     json_object = get_json_from_file("apk_tree");
     data_string = json.dumps(json_object)
     jdict = json.loads(data_string)
@@ -427,7 +447,6 @@ if "__main__" == __name__:
                 apk_new = arg
             if opt in ("-t", "--top"):
                 top = arg
-
 
     except getopt.GetoptError, e:
         print("getopt error! " + e.msg);
