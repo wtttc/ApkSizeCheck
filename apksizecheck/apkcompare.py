@@ -306,7 +306,7 @@ def get_apk_data(apk_single):
 
 
 def usage():
-    print '------------PyTest.py usage:------------'
+    print '------------apkcompare.py usage:------------'
     print '-h, --help     : print help message.'
     print '-o, --old      : input old apk file path'
     print '-n, --new      : input new apk file path'
