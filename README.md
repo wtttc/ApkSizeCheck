@@ -145,7 +145,7 @@ numpy and Pillow are needed if using apkimagecheck, pip can install it.
     
     ```
     
-        python apkcompare.py -o weibo540.apk -n weibo545.apk
+         python apkimagecheck.py -f weibo545.apk
         
     
     ```
