@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import json
 import functools
 import os
 import sys
-import zipfile
-import shutil
 import getopt
 import struct
+
+import utils
 
 __author__ = 'tiantong'
 
@@ -37,83 +38,6 @@ def get_json_from_file(file_dir):
     pass
 
 
-# 转换大小显示
-def get_size_in_nice_string(sizeInBytes):
-    if sizeInBytes < 0:
-        return "-" + get_size_in_nice_string(-sizeInBytes)
-
-    for (cutoff, label) in [(1024 * 1024 * 1024, "GB"),
-                            (1024 * 1024, "MB"),
-                            (1024, "KB"),
-                            ]:
-        if sizeInBytes >= cutoff:
-            return "%.1f %s" % (sizeInBytes * 1.0 / cutoff, label)
-
-    if sizeInBytes == 1:
-        return "1 byte"
-    else:
-        bytes = "%.1f" % (sizeInBytes or 0,)
-        return (bytes[:-2] if bytes.endswith('.0') else bytes) + ' bytes'
-
-
-# 获取文件或者文件夹大小
-def get_path_size(strPath):
-    if not os.path.exists(strPath):
-        return 0;
-
-    if os.path.isfile(strPath):
-        return os.path.getsize(strPath);
-
-    nTotalSize = 0;
-    for strRoot, lsDir, lsFiles in os.walk(strPath):
-        # get child directory size
-        for strDir in lsDir:
-            nTotalSize = nTotalSize + get_path_size(os.path.join(strRoot, strDir));
-
-            # for child file size
-        for strFile in lsFiles:
-            nTotalSize = nTotalSize + os.path.getsize(os.path.join(strRoot, strFile));
-
-    return nTotalSize;
-
-
-# 覆盖解压缩文件
-def unzip_dir(zipfilename, unzipdirname):
-    fullzipfilename = os.path.abspath(zipfilename)
-    fullunzipdirname = os.path.abspath(unzipdirname)
-    # print "Start to unzip file %s to folder %s ..." % (zipfilename, unzipdirname)
-    # Check input ...
-    if not os.path.exists(fullzipfilename):
-        print "Dir/File %s is not exist, Press any key to quit..." % fullzipfilename
-        inputStr = raw_input()
-        return
-    # remove exist file or floder
-    if not os.path.exists(fullunzipdirname):
-        os.mkdir(fullunzipdirname)
-    else:
-        if os.path.isfile(fullunzipdirname):
-            while 1:
-                os.remove(fullunzipdirname)
-                break
-
-    # Start extract files ...
-    srcZip = zipfile.ZipFile(fullzipfilename, "r")
-    for eachfile in srcZip.namelist():
-        try:
-            # print "Unzip file %s ..." % eachfile
-            eachfilename = os.path.normpath(os.path.join(fullunzipdirname, eachfile))
-            eachdirname = os.path.dirname(eachfilename)
-            if not os.path.exists(eachdirname):
-                os.makedirs(eachdirname)
-            fd = open(eachfilename, "wb")
-            fd.write(srcZip.read(eachfile))
-            fd.close()
-        except Exception, e:
-            pass
-    srcZip.close()
-    # print "Unzip file succeed!"
-
-
 # 获取文件中(jar or dex)的方法数
 def get_method_counts_in_file(filepath):
     if not os.path.isfile(filepath):
@@ -127,10 +51,10 @@ def get_method_counts_in_file(filepath):
         # print("floderpath:" + floderpath)
         unzippath = os.path.join(floderpath, filename)
         # print("unzippath:" + unzippath)
-        unzip_dir(abspath, unzippath)
+        utils.unzip_dir(abspath, unzippath)
         dexpath = os.path.join(unzippath, "classes.dex")
         count = get_method_count(dexpath)
-        surely_rmdir(unzippath)
+        utils.surely_rmdir(unzippath)
         return count
     elif ".dex" in filepath:
         abspath = os.path.abspath(filepath)
@@ -148,29 +72,13 @@ def get_method_count(dex_path):
     return struct.unpack('<I', method_count_bytes)[0]
 
 
-# 获取到floder_root路径文件夹的路径
-def get_folder_name(parent, floder_root):
-    # 默认情况显示最后一个文件夹的名字
-    if floder_root is not None and floder_root not in parent:
-        _list = parent.split(os.sep)
-        if _list[-1].__len__() > 0:
-            return _list[-1]
-        return _list[-2]
-
-    folder_name = os.path.split(parent)
-    if folder_name[1] == floder_root:
-        return folder_name[1].replace(floder_root, "")
-    else:
-        return get_folder_name(folder_name[0], floder_root) + os.sep + folder_name[1]
-
-
 def walk_dict(parent, jdict, size_dict=None, method_dict=None, root_name=None):
     for (d, x) in jdict.items():
         path = os.path.join(parent, d)
-        size = get_path_size(path)
+        size = utils.get_path_size(path)
         key = d
         if root_name is not None:
-            key = get_folder_name(path, root_name)
+            key = utils.get_folder_name(path, root_name)
         # print("key:" + key)
         if size_dict is not None and isinstance(size_dict, dict):
             size_dict[key] = size
@@ -187,16 +95,11 @@ def walk_dict(parent, jdict, size_dict=None, method_dict=None, root_name=None):
         else:
             method_count += str(count)
         print("path:%-30s | size: %-12s | %-17s" % (
-            key, get_size_in_nice_string(size), method_count))
+            key, utils.get_size_in_nice_string(size), method_count))
         if isinstance(x, dict):
             walk_dict(path, x, size_dict, method_dict, root_name)
         else:
             pass
-
-
-def surely_rmdir(dir):
-    if os.path.exists(dir) and os.path.isdir(dir):
-        shutil.rmtree(dir)
 
 
 def compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict):
@@ -212,13 +115,13 @@ def compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict):
                     old_method_count = old_method_dict[k]
                 method_count = new_method_count - old_method_count
                 print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s | methods changed:  %-12s" % (
-                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v),
-                    get_size_in_nice_string(changed),
+                    k, utils.get_size_in_nice_string(old_apk_obj[k]), utils.get_size_in_nice_string(v),
+                    utils.get_size_in_nice_string(changed),
                     str(method_count)))
             else:
                 print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s" % (
-                    k, get_size_in_nice_string(old_apk_obj[k]), get_size_in_nice_string(v),
-                    get_size_in_nice_string(changed)))
+                    k, utils.get_size_in_nice_string(old_apk_obj[k]), utils.get_size_in_nice_string(v),
+                    utils.get_size_in_nice_string(changed)))
 
 
 def dirCompare(old_path, new_path, new_dict, removed_dict, changed_dict):
@@ -247,7 +150,7 @@ def dirCompare(old_path, new_path, new_dict, removed_dict, changed_dict):
     # 处理共有文件
     commonfiles = setA & setB
     for of in sorted(commonfiles):
-        size_changed = get_path_size(str(new_path + of)) - get_path_size(str(old_path + of))
+        size_changed = utils.get_path_size(str(new_path + of)) - utils.get_path_size(str(old_path + of))
         if size_changed != 0:
             changed_dict[of] = size_changed
 
@@ -263,12 +166,12 @@ def dirCompare(old_path, new_path, new_dict, removed_dict, changed_dict):
 
     # print "#only in ", old_path
     for of in sorted(aonlyFiles):
-        removed_dict[of] = get_path_size(str(old_path + of))
+        removed_dict[of] = utils.get_path_size(str(old_path + of))
 
     # print "#only in ", new_path
     for of in sorted(bonlyFiles):
         # print of + " size:" + get_size_in_nice_string(get_path_size(str(new_path + of)))
-        new_dict[of] = get_path_size(str(new_path + of))
+        new_dict[of] = utils.get_path_size(str(new_path + of))
 
 
 def print_top_dict(dict=dict(), top=None, dict_name=""):
@@ -282,12 +185,12 @@ def print_top_dict(dict=dict(), top=None, dict_name=""):
         if top is not None and int(count) > int(top):
             break
         count += 1
-        print("file:%-60s | size: %-12s " % (kv[0], get_size_in_nice_string(kv[1])))
+        print("file:%-60s | size: %-12s " % (kv[0], utils.get_size_in_nice_string(kv[1])))
 
 
 def check_unzipped_apk(apk_name, apk_path):
     file_count = sum([len(x) for _, _, x in os.walk(apk_path)])
-    floder_size = get_size_in_nice_string(get_path_size(apk_path))
+    floder_size = utils.get_size_in_nice_string(utils.get_path_size(apk_path))
     print("apk:%s   size: %s   files: %s" % (apk_name, floder_size, file_count))
 
 
@@ -298,19 +201,19 @@ def compare_apk(apk_old, apk_new, top=None):
     print("old_apk_dir:" + old_apk_dir)
     print("new_apk_dir:" + new_apk_dir)
 
-    old_size = get_path_size(apk_old)
-    new_size = get_path_size(apk_new)
-    print("apk_old:%s size: %s" % (apk_old, get_size_in_nice_string(old_size)))
-    print("apk_new:%s size: %s" % (apk_new, get_size_in_nice_string(new_size)))
+    old_size = utils.get_path_size(apk_old)
+    new_size = utils.get_path_size(apk_new)
+    print("apk_old:%s size: %s" % (apk_old, utils.get_size_in_nice_string(old_size)))
+    print("apk_new:%s size: %s" % (apk_new, utils.get_size_in_nice_string(new_size)))
     print("")
 
     # 解压文件夹以便分析
-    surely_rmdir(old_apk_dir)
-    surely_rmdir(new_apk_dir)
+    utils.surely_rmdir(old_apk_dir)
+    utils.surely_rmdir(new_apk_dir)
     print("start to unzip apk old")
-    unzip_dir(apk_old, old_apk_dir)
+    utils.unzip_dir(apk_old, old_apk_dir)
     print("start to unzip apk new")
-    unzip_dir(apk_new, new_apk_dir)
+    utils.unzip_dir(apk_new, new_apk_dir)
     print("")
 
     print("unzip apk info:")
@@ -364,21 +267,21 @@ def compare_apk(apk_old, apk_new, top=None):
     print_top_dict(changed_file_dict, top, "changed file")
 
     # 清除临时解压的apk文件夹
-    surely_rmdir(old_apk_dir)
-    surely_rmdir(new_apk_dir)
+    utils.surely_rmdir(old_apk_dir)
+    utils.surely_rmdir(new_apk_dir)
 
 
 def get_apk_data(apk_single):
     # 获取没有拓展名的文件名
     apk_dir = os.path.split(apk_single)[-1].split(".")[0]
 
-    apk_size = get_path_size(apk_single)
-    print("apk_single:%s size: %s" % (apk_dir, get_size_in_nice_string(apk_size)))
+    apk_size = utils.get_path_size(apk_single)
+    print("apk_single:%s size: %s" % (apk_dir, utils.get_size_in_nice_string(apk_size)))
 
     # 解压文件夹以便分析
     print("start to unzip apk single")
-    surely_rmdir(apk_dir)
-    unzip_dir(apk_single, apk_dir)
+    utils.surely_rmdir(apk_dir)
+    utils.unzip_dir(apk_single, apk_dir)
 
     print("unzip apk info:")
     check_unzipped_apk(apk_single, apk_dir)
@@ -399,15 +302,7 @@ def get_apk_data(apk_single):
     print("============%s==============" % apk_dir)
 
     # 清除临时解压的apk文件夹
-    surely_rmdir(apk_dir)
-
-
-def check_apk_name_valid(name):
-    apk_name = os.path.split(name)[-1]
-    count = apk_name.count(".") + apk_name.count(" ")
-    if count > 1:
-        print("Find name invalid, please rename to continue.")
-        sys.exit(1)
+    utils.surely_rmdir(apk_dir)
 
 
 def usage():
@@ -418,6 +313,11 @@ def usage():
     print '-s, --single   : input single apk file path, conflict with -o & -n'
     print '-t, --top      : show the top "n" file new/removed/changed in apk'
     print '----------------------------------------'
+
+
+def exit():
+    usage()
+    sys.exit(1)
 
 
 if "__main__" == __name__:
@@ -450,19 +350,17 @@ if "__main__" == __name__:
 
     except getopt.GetoptError, e:
         print("getopt error! " + e.msg);
-        usage()
-        sys.exit(1)
+        exit()
 
     if apk_single is not None:
         print("apk_single valid, -o and -n will be ignored");
         # 检查单个
-        check_apk_name_valid(apk_single)
+        utils.check_apk_name_valid(apk_single)
         get_apk_data(apk_single)
     elif apk_new is None or apk_old is None:
         print("invalid input! Able to check if valid args with -o and -n or -s");
-        usage()
-        sys.exit(1)
+        exit()
     else:
-        check_apk_name_valid(apk_new)
-        check_apk_name_valid(apk_old)
+        utils.check_apk_name_valid(apk_new)
+        utils.check_apk_name_valid(apk_old)
         compare_apk(apk_old, apk_new, top)
