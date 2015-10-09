@@ -1,5 +1,16 @@
 # ApkSizeCheck
 Simple py script to check the change of apk size & check images can be optimize to shrink apk.
+Python2.7+ is needed.
+numpy and Pillow are needed if using apkimagecheck, pip can install it.
+
+```
+
+    sudo pip install -i http://pypi.douban.com/simple/ Pillow
+    ...
+    sudo pip install -i http://pypi.douban.com/simple/ numpy
+    
+
+```
 
 -----
 # apkcompare
@@ -187,3 +198,4 @@ Simple py script to check the change of apk size & check images can be optimize 
 2. build path
 3. unchecked on linux
 4. unable to check method count if not simply dex file or a dex in jar. (should modify method get_method_counts_in_file)
+5. Obfuscated resources may interrupt since each file's name changed.
