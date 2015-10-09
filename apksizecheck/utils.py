@@ -90,6 +90,7 @@ def check_apk_name_valid(name):
     count = apk_name.count(".") + apk_name.count(" ")
     if count > 1:
         print("Find name invalid, please rename to continue.")
+        print("")
         sys.exit(1)
 
 
