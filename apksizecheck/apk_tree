@@ -17,7 +17,8 @@
         "radar.jar":0,
         "account.jar":0,
         "statistic.jar":0,
-        "pagecard.jar":0
+        "pagecard.jar":0,
+        "feed.jar":0
     },
     "lib":{},
     "res":{
