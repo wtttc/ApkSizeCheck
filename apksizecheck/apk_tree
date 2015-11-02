@@ -1,6 +1,9 @@
 {
     "AndroidManifest.xml":0,
     "classes.dex":0,
+    "classes2.dex":0,
+    "classes3.dex":0,
+    "classes4.dex":0,
     "resources.arsc":0,
     "assets":{
         "appmarket.jar":0,
@@ -8,17 +11,20 @@
         "composer.jar":0,
         "health.jar":0,
         "facebook.jar":0,
-        "mediaplayer.jar":0,
         "monitor.jar":0,
         "photoalbum.jar":0,
         "wymessage.jar":0,
         "sync.jar":0,
         "qrcode.jar":0,
         "radar.jar":0,
-        "account.jar":0,
-        "statistic.jar":0,
-        "pagecard.jar":0,
-        "feed.jar":0
+        "exlibs":{
+            "alipay.jar":0,
+            "baidu_appseller.jar":0,
+            "boot.jar":0,
+            "thirdparty_openapi.jar":0,
+            "wbc.jar":0,
+            "weiboad.jar":0
+        }
     },
     "lib":{},
     "res":{

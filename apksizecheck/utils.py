@@ -113,3 +113,31 @@ def get_folder_name(parent, floder_root):
         return folder_name[1].replace(floder_root, "")
     else:
         return get_folder_name(folder_name[0], floder_root) + os.sep + folder_name[1]
+
+
+def cur_file_dir():
+    # 获取脚本路径
+    path = sys.path[0]
+    # 判断为脚本文件还是py2exe编译后的文件，如果是脚本文件，则返回的是脚本的目录，如果是py2exe编译后的文件，则返回的是编译后的文件路径
+    if os.path.isdir(path):
+        return path
+    elif os.path.isfile(path):
+        return os.path.dirname(path)
+
+
+def read_set_from_file(filePath):
+    try:
+        f = open(filePath, 'r')
+        result = set()
+        for line in f.readlines():
+            # 去掉空白
+            line = line.strip()
+            # 判断是否是空行或注释行
+            if not len(line) or line.startswith('#'):
+                continue
+            # print("line:" + line)
+            result.add(line)
+        return result
+
+    except Exception, ex:
+        print "Error:" + str(ex)
