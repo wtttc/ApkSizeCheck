@@ -60,7 +60,7 @@ def estimate_target_file(apk_file, target, out_floder=None):
                 suffix = file_path[suffix_index + len(out_floder) + 1:]
                 out_file_path = os.path.join(temp_zip_floder, suffix)
                 out_file_floder = os.path.dirname(out_file_path)
-                # print("find match:" + file)
+                print("find match:" + file)
                 # print("temp_zip_floder:" + temp_zip_floder)
                 # print("suffix:" + suffix)
                 # print("out_file_path:" + out_file_path)

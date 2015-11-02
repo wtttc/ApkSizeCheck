@@ -12,6 +12,10 @@ import utils
 
 __author__ = 'tiantong'
 
+OLD_FOLDER_NAME = "old"
+NEW_FOLDER_NAME = "new"
+SINGLE_FOLDER_NAME = "single"
+
 
 # 打开文件
 def open_read_file():
@@ -94,7 +98,7 @@ def walk_dict(parent, jdict, size_dict=None, method_dict=None, root_name=None):
             method_count = ""
         else:
             method_count += str(count)
-        print("path:%-30s | size: %-12s | %-17s" % (
+        print("path:%-60s | size: %-12s | %-17s" % (
             key, utils.get_size_in_nice_string(size), method_count))
         if isinstance(x, dict):
             walk_dict(path, x, size_dict, method_dict, root_name)
@@ -114,12 +118,12 @@ def compare_dict(new_apk_obj, old_apk_obj, new_method_dict, old_method_dict):
                 if old_method_dict.has_key(k):
                     old_method_count = old_method_dict[k]
                 method_count = new_method_count - old_method_count
-                print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s | methods changed:  %-12s" % (
+                print("file:%-60s | old: %-12s | new: %-12s | changed: %-12s | methods changed:  %-12s" % (
                     k, utils.get_size_in_nice_string(old_apk_obj[k]), utils.get_size_in_nice_string(v),
                     utils.get_size_in_nice_string(changed),
                     str(method_count)))
             else:
-                print("file:%-30s | old: %-12s | new: %-12s | changed: %-12s" % (
+                print("file:%-60s | old: %-12s | new: %-12s | changed: %-12s" % (
                     k, utils.get_size_in_nice_string(old_apk_obj[k]), utils.get_size_in_nice_string(v),
                     utils.get_size_in_nice_string(changed)))
 
@@ -174,14 +178,14 @@ def dirCompare(old_path, new_path, new_dict, removed_dict, changed_dict):
         new_dict[of] = utils.get_path_size(str(new_path + of))
 
 
-def print_top_dict(dict=dict(), top=None, dict_name=""):
-    dict = sorted(dict.items(), key=lambda dict: dict[1], reverse=True)
+def print_top_dict(top_dict=dict(), top=None, dict_name=""):
+    top_dict = sorted(top_dict.items(), key=lambda dict: dict[1], reverse=True)
     count = 0
     if top is not None:
         print("============top %s in %s ============" % (str(top), dict_name))
     else:
         print("============%s============" % dict_name)
-    for kv in dict:
+    for kv in top_dict:
         if top is not None and int(count) > int(top):
             break
         count += 1
@@ -196,8 +200,8 @@ def check_unzipped_apk(apk_name, apk_path):
 
 def compare_apk(apk_old, apk_new, top=None):
     # 获取没有拓展名的文件名
-    old_apk_dir = os.path.split(apk_old)[-1].split(".")[0]
-    new_apk_dir = os.path.split(apk_new)[-1].split(".")[0]
+    old_apk_dir = os.path.join(os.path.dirname(apk_old), OLD_FOLDER_NAME)
+    new_apk_dir = os.path.join(os.path.dirname(apk_old), NEW_FOLDER_NAME)
     print("old_apk_dir:" + old_apk_dir)
     print("new_apk_dir:" + new_apk_dir)
 
@@ -220,7 +224,7 @@ def compare_apk(apk_old, apk_new, top=None):
     check_unzipped_apk(apk_old, old_apk_dir)
     check_unzipped_apk(apk_new, new_apk_dir)
 
-    json_object = get_json_from_file("apk_tree");
+    json_object = get_json_from_file("apk_tree")
     data_string = json.dumps(json_object)
     jdict = json.loads(data_string)
 
@@ -234,14 +238,14 @@ def compare_apk(apk_old, apk_new, top=None):
     print("")
     print("")
     # 输出其中指定文件的大小
-    print("============%s==============" % old_apk_dir)
-    walk_dict(old_apk_dir, jdict, old_apk_obj, old_method_dict, old_apk_dir)
-    print("============%s==============" % old_apk_dir)
+    print("============old==============")
+    walk_dict(old_apk_dir, jdict, old_apk_obj, old_method_dict, OLD_FOLDER_NAME)
+    print("============old==============")
     print("")
     print("")
-    print("============%s==============" % new_apk_dir)
-    walk_dict(new_apk_dir, jdict, new_apk_obj, new_method_dict, new_apk_dir)
-    print("============%s==============" % new_apk_dir)
+    print("============new==============")
+    walk_dict(new_apk_dir, jdict, new_apk_obj, new_method_dict, NEW_FOLDER_NAME)
+    print("============new==============")
     print("")
     print("")
 
@@ -273,7 +277,7 @@ def compare_apk(apk_old, apk_new, top=None):
 
 def get_apk_data(apk_single):
     # 获取没有拓展名的文件名
-    apk_dir = os.path.split(apk_single)[-1].split(".")[0]
+    apk_dir = os.path.join(os.path.dirname(apk_single), SINGLE_FOLDER_NAME)
 
     apk_size = utils.get_path_size(apk_single)
     print("apk_single:%s size: %s" % (apk_dir, utils.get_size_in_nice_string(apk_size)))
@@ -286,20 +290,20 @@ def get_apk_data(apk_single):
     print("unzip apk info:")
     check_unzipped_apk(apk_single, apk_dir)
 
-    json_object = get_json_from_file("apk_tree");
+    json_object = get_json_from_file("apk_tree")
     data_string = json.dumps(json_object)
     jdict = json.loads(data_string)
 
     # 键值对保存要查文件的大小，用于后面对比
-    apk_obj = dict();
-    method_dict = dict();
+    apk_obj = dict()
+    method_dict = dict()
 
     print("")
     print("")
     # 输出其中指定文件的大小
-    print("============%s==============" % apk_dir)
-    walk_dict(apk_dir, jdict, apk_obj, method_dict, apk_dir)
-    print("============%s==============" % apk_dir)
+    print("============single==============")
+    walk_dict(apk_dir, jdict, apk_obj, method_dict, SINGLE_FOLDER_NAME)
+    print("============single==============")
 
     # 清除临时解压的apk文件夹
     utils.surely_rmdir(apk_dir)
@@ -321,10 +325,10 @@ def exit():
 
 
 if "__main__" == __name__:
-    apk_old = None;
-    apk_new = None;
-    apk_single = None;
-    top = None;
+    apk_old = None
+    apk_new = None
+    apk_single = None
+    top = None
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:n:s:t:", ["help", "output="])
 
@@ -337,8 +341,7 @@ if "__main__" == __name__:
         # check all param
         for opt, arg in opts:
             if opt in ("-h", "--help"):
-                usage();
-                sys.exit(1);
+                exit()
             if opt in ("-s", "--single"):
                 apk_single = arg
             if opt in ("-o", "--old"):
@@ -349,18 +352,15 @@ if "__main__" == __name__:
                 top = arg
 
     except getopt.GetoptError, e:
-        print("getopt error! " + e.msg);
+        print("getopt error! " + e.msg)
         exit()
 
     if apk_single is not None:
-        print("apk_single valid, -o and -n will be ignored");
+        print("apk_single valid, -o and -n will be ignored")
         # 检查单个
-        utils.check_apk_name_valid(apk_single)
         get_apk_data(apk_single)
     elif apk_new is None or apk_old is None:
-        print("invalid input! Able to check if valid args with -o and -n or -s");
+        print("invalid input! Able to check if valid args with -o and -n or -s")
         exit()
     else:
-        utils.check_apk_name_valid(apk_new)
-        utils.check_apk_name_valid(apk_old)
         compare_apk(apk_old, apk_new, top)

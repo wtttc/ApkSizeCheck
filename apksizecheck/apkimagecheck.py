@@ -33,7 +33,7 @@ def check_img_mode(filepath, value=255):
                         # ？？？ 透明度较低的图片没什么用的怎么说，我这个透明度是透给谁？？？
                         if arr[j][i] < value:
                             find_alpha = True
-                            break;
+                            break
                 if not find_alpha:
                     return "RGB"
     except Exception, ex:
@@ -102,7 +102,6 @@ def apk_image_check(check_alpha=True, limit=40000, apk=None, ignore9=True, value
         print("invalid apk file or name")
         exit()
 
-    utils.check_apk_name_valid(apk)
     print("apk:" + apk)
 
     # 获取没有拓展名的文件名
@@ -116,16 +115,16 @@ def apk_image_check(check_alpha=True, limit=40000, apk=None, ignore9=True, value
 
     if limit is not None:
         print("")
-        print("============ check size limit ==================");
+        print("============ check size limit ==================")
         check_image_limit(apk, apk_dir, limit)
-        print("============ check size limit ==================");
+        print("============ check size limit ==================")
 
     if check_alpha:
         print("")
         print("")
-        print("============ check image alpha ==================");
+        print("============ check image alpha ==================")
         check_apk_alpha(apk, apk_dir, ignore9, value)
-        print("============ check image alpha ==================");
+        print("============ check image alpha ==================")
     print("")
 
     # 移除分析用的解压出来的文件
@@ -151,8 +150,8 @@ def exit():
 
 if "__main__" == __name__:
     check_alpha = True
-    limit = 40000;
-    apk = None;
+    limit = 40000
+    apk = None
     ignore9 = True
     value = 255
     try:
@@ -167,8 +166,7 @@ if "__main__" == __name__:
         # check all param
         for opt, arg in opts:
             if opt in ("-h", "--help"):
-                usage();
-                sys.exit(1);
+                exit()
             if opt in ("-l", "--limit"):
                 limit = arg
             if opt in ("-a", "--alpha"):
@@ -183,7 +181,7 @@ if "__main__" == __name__:
                     value = alpha_value
 
     except getopt.GetoptError, e:
-        print("getopt error! " + e.msg);
+        print("getopt error! " + e.msg)
         exit()
 
     print("")
