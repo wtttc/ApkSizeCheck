@@ -99,6 +99,11 @@ def surely_rmdir(dir):
         shutil.rmtree(dir)
 
 
+def surely_rmfile(file):
+    if os.path.isfile(file):
+        os.remove(file)
+
+
 # 获取到floder_root路径文件夹的路径
 def get_folder_name(parent, floder_root):
     # 默认情况显示最后一个文件夹的名字
@@ -141,3 +146,39 @@ def read_set_from_file(filePath):
 
     except Exception, ex:
         print "Error:" + str(ex)
+
+
+def zip_dir(dirname, zipfilename):
+    filelist = []
+    # Check input ...
+    fulldirname = os.path.abspath(dirname)
+    fullzipfilename = os.path.abspath(zipfilename)
+    print "Start to zip %s to %s ..." % (fulldirname, fullzipfilename)
+    if not os.path.exists(fulldirname):
+        # print "Dir/File %s is not exist, Press any key to quit..." % fulldirname
+        inputStr = raw_input()
+        return
+    if os.path.isdir(fullzipfilename):
+        tmpbasename = os.path.basename(dirname)
+        fullzipfilename = os.path.normpath(os.path.join(fullzipfilename, tmpbasename))
+    if os.path.exists(fullzipfilename):
+        os.remove(fullzipfilename)
+
+        # Get file(s) to zip ...
+    if os.path.isfile(dirname):
+        filelist.append(dirname)
+        dirname = os.path.dirname(dirname)
+    else:
+        # get all file in directory
+        for root, dirlist, files in os.walk(dirname):
+            for filename in files:
+                filelist.append(os.path.join(root, filename))
+
+                # Start to zip file ...
+    destZip = zipfile.ZipFile(fullzipfilename, "w")
+    for eachfile in filelist:
+        destfile = eachfile[len(dirname):]
+        # print "Zip file %s..." % destfile
+        destZip.write(eachfile, destfile)
+    destZip.close()
+    print "Zip folder succeed!"
